@@ -25,7 +25,7 @@ class NodeType(Enum):
 @dataclass
 class ASTNode:
     """AST节点基类"""
-    node_type: NodeType
+    node_type: NodeType = field(default=NodeType.EXPRESSION)
     line: int = 0
     column: int = 0
 
@@ -33,82 +33,82 @@ class ASTNode:
 @dataclass
 class Expression(ASTNode):
     """表达式节点基类"""
-    pass
+    node_type: NodeType = field(default=NodeType.EXPRESSION)
 
 
 @dataclass
 class StringLiteral(Expression):
     """字符串字面量"""
-    value: str
+    value: str = ""
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class NumberLiteral(Expression):
     """数字字面量"""
-    value: Union[int, float]
+    value: Union[int, float] = 0
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class BooleanLiteral(Expression):
     """布尔字面量"""
-    value: bool
+    value: bool = False
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class ListLiteral(Expression):
     """列表字面量"""
-    elements: List[Expression]
+    elements: List[Expression] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class Identifier(Expression):
     """标识符"""
-    name: str
+    name: str = ""
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class BinaryOp(Expression):
     """二元运算表达式"""
-    operator: str  # +, -, *, /, ==, !=, <, >, <=, >=, and, or
-    left: Expression
-    right: Expression
+    operator: str = ""  # +, -, *, /, ==, !=, <, >, <=, >=, and, or
+    left: Expression = None
+    right: Expression = None
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class UnaryOp(Expression):
     """一元运算表达式"""
-    operator: str  # not, -
-    operand: Expression
+    operator: str = ""  # not, -
+    operand: Expression = None
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class FunctionCall(Expression):
     """函数调用表达式"""
-    name: str
-    arguments: List[Expression]
+    name: str = ""
+    arguments: List[Expression] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class MemberAccess(Expression):
     """成员访问表达式"""
-    object: Expression
-    member: str
+    object: Expression = None
+    member: str = ""
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
 @dataclass
 class IndexAccess(Expression):
     """索引访问表达式"""
-    object: Expression
-    index: Expression
+    object: Expression = None
+    index: Expression = None
     node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 
@@ -117,43 +117,43 @@ class IndexAccess(Expression):
 @dataclass
 class Statement(ASTNode):
     """语句节点基类"""
-    pass
+    node_type: NodeType = field(default=NodeType.ACTION)
 
 
 @dataclass
 class SayStatement(Statement):
     """say语句 - 机器人说话"""
-    message: Expression
+    message: Expression = None
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class AskStatement(Statement):
     """ask语句 - 向用户提问并存储回答"""
-    prompt: Expression
-    variable: str
+    prompt: Expression = None
+    variable: str = ""
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class SetStatement(Statement):
     """set语句 - 设置变量"""
-    variable: str
-    value: Expression
+    variable: str = ""
+    value: Expression = None
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class GotoStatement(Statement):
     """goto语句 - 跳转到状态"""
-    state_name: str
+    state_name: str = ""
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class CallStatement(Statement):
     """call语句 - 调用函数"""
-    function_call: FunctionCall
+    function_call: FunctionCall = None
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
@@ -167,9 +167,9 @@ class ReturnStatement(Statement):
 @dataclass
 class IfStatement(Statement):
     """if语句"""
-    condition: Expression
-    then_block: List[Statement]
-    elif_blocks: List[tuple]  # List of (condition, statements)
+    condition: Expression = None
+    then_block: List[Statement] = field(default_factory=list)
+    elif_blocks: List[tuple] = field(default_factory=list)  # List of (condition, statements)
     else_block: Optional[List[Statement]] = None
     node_type: NodeType = field(default=NodeType.CONDITION, init=False)
 
@@ -177,24 +177,24 @@ class IfStatement(Statement):
 @dataclass
 class WhileStatement(Statement):
     """while语句"""
-    condition: Expression
-    body: List[Statement]
+    condition: Expression = None
+    body: List[Statement] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class ForStatement(Statement):
     """for语句"""
-    variable: str
-    iterable: Expression
-    body: List[Statement]
+    variable: str = ""
+    iterable: Expression = None
+    body: List[Statement] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class ExpressionStatement(Statement):
     """表达式语句"""
-    expression: Expression
+    expression: Expression = None
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
@@ -203,8 +203,8 @@ class ExpressionStatement(Statement):
 @dataclass
 class IntentDef(ASTNode):
     """意图定义"""
-    name: str
-    patterns: List[str]  # 关键词模式
+    name: str = ""
+    patterns: List[str] = field(default_factory=list)  # 关键词模式
     description: str = ""  # 意图描述，用于LLM理解
     examples: List[str] = field(default_factory=list)  # 示例句子
     node_type: NodeType = field(default=NodeType.INTENT, init=False)
@@ -213,8 +213,8 @@ class IntentDef(ASTNode):
 @dataclass
 class TransitionRule(ASTNode):
     """状态转换规则"""
-    intent_name: str  # 触发意图
-    target_state: str  # 目标状态
+    intent_name: str = ""  # 触发意图
+    target_state: str = ""  # 目标状态
     condition: Optional[Expression] = None  # 可选条件
     node_type: NodeType = field(default=NodeType.TRANSITION, init=False)
 
@@ -222,22 +222,22 @@ class TransitionRule(ASTNode):
 @dataclass
 class FallbackHandler(ASTNode):
     """兜底处理器"""
-    statements: List[Statement]
+    statements: List[Statement] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class EventHandler(ASTNode):
     """事件处理器"""
-    event_type: str  # on_enter, on_exit, on_message
-    statements: List[Statement]
+    event_type: str = ""  # on_enter, on_exit, on_message
+    statements: List[Statement] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.ACTION, init=False)
 
 
 @dataclass
 class StateDef(ASTNode):
     """状态定义"""
-    name: str
+    name: str = ""
     is_initial: bool = False
     is_final: bool = False
     handlers: List[EventHandler] = field(default_factory=list)
@@ -249,7 +249,7 @@ class StateDef(ASTNode):
 @dataclass
 class VariableDef(ASTNode):
     """变量定义"""
-    name: str
+    name: str = ""
     initial_value: Optional[Expression] = None
     var_type: Optional[str] = None  # 可选类型注解
     node_type: NodeType = field(default=NodeType.VARIABLE, init=False)
@@ -258,7 +258,7 @@ class VariableDef(ASTNode):
 @dataclass
 class ParameterDef:
     """函数参数定义"""
-    name: str
+    name: str = ""
     default_value: Optional[Expression] = None
     param_type: Optional[str] = None
 
@@ -266,9 +266,9 @@ class ParameterDef:
 @dataclass
 class FunctionDef(ASTNode):
     """函数定义"""
-    name: str
-    parameters: List[ParameterDef]
-    body: List[Statement]
+    name: str = ""
+    parameters: List[ParameterDef] = field(default_factory=list)
+    body: List[Statement] = field(default_factory=list)
     return_type: Optional[str] = None
     node_type: NodeType = field(default=NodeType.FUNCTION, init=False)
 
@@ -276,7 +276,7 @@ class FunctionDef(ASTNode):
 @dataclass
 class BotDef(ASTNode):
     """机器人定义 - 顶层节点"""
-    name: str
+    name: str = ""
     description: str = ""
     intents: List[IntentDef] = field(default_factory=list)
     states: List[StateDef] = field(default_factory=list)
@@ -289,7 +289,7 @@ class BotDef(ASTNode):
 @dataclass
 class Program(ASTNode):
     """程序节点 - 最顶层"""
-    bots: List[BotDef]
+    bots: List[BotDef] = field(default_factory=list)
     node_type: NodeType = field(default=NodeType.BOT, init=False)
 
 
