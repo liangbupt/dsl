@@ -55,7 +55,7 @@ class LLMClient:
         初始化LLM客户端
         
         Args:
-            api_key: API密钥
+            api_key: API密钥hu
             base_url: API基础URL
             model: 使用的模型名称
         """
