@@ -120,18 +120,35 @@ python src/cli.py scripts/ecommerce.bot --debug
 python src/cli.py --help
 ```
 
-### 使用真实LLM API（可选）
+### 使用 DeepSeek API（推荐）
 
 ```bash
-# 配置API密钥
+# 配置 DeepSeek API密钥
+# Windows
+set DEEPSEEK_API_KEY=your_api_key_here
+
+# Linux/Mac
+export DEEPSEEK_API_KEY=your_api_key_here
+
+# 使用 DeepSeek V3 进行意图识别（默认）
+python src/cli.py scripts/ecommerce.bot --llm
+
+# 或显式指定
+python src/cli.py scripts/ecommerce.bot --llm --provider deepseek
+```
+
+### 使用 OpenAI API（可选）
+
+```bash
+# 配置 OpenAI API密钥
 # Windows
 set OPENAI_API_KEY=your_api_key_here
 
 # Linux/Mac
 export OPENAI_API_KEY=your_api_key_here
 
-# 使用真实LLM进行意图识别
-python src/cli.py scripts/ecommerce.bot --llm
+# 使用 OpenAI 进行意图识别
+python src/cli.py scripts/ecommerce.bot --llm --provider openai
 ```
 
 ## 业务场景示例
@@ -164,7 +181,7 @@ python -m pytest tests/test_interpreter.py -v
 
 - **编程语言**: Python 3.8+
 - **词法/语法分析**: PLY (Python Lex-Yacc)
-- **LLM集成**: OpenAI API（支持兼容API）
+- **LLM集成**: DeepSeek API（默认）、OpenAI API（兼容）
 - **版本管理**: Git
 
 ## 许可证

@@ -223,6 +223,10 @@ class CLI:
                     confidence = self.interpreter.env.get('_confidence') if self.interpreter.env else 0
                     self.printer.debug(f"识别意图: {intent} (置信度: {confidence:.2f})")
                 
+                # 打印机器人响应
+                if response:
+                    self.printer.bot(response)
+                
                 print()  # 空行分隔
                 
                 if not continue_chat:
@@ -286,11 +290,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 示例:
-  python cli.py scripts/ecommerce.bot      运行电商客服
-  python cli.py scripts/banking.bot        运行银行客服
-  python cli.py scripts/telecom.bot        运行电信客服
-  python cli.py script.bot --llm           使用真实LLM API
-  python cli.py script.bot --debug         启用调试模式
+  python cli.py scripts/ecommerce.bot           运行电商客服(模拟模式)
+  python cli.py scripts/ecommerce.bot --llm     使用 DeepSeek V3 API
+  python cli.py scripts/banking.bot --debug     调试模式
         '''
     )
     
@@ -302,7 +304,7 @@ def main():
     parser.add_argument(
         '--llm',
         action='store_true',
-        help='使用真实LLM API进行意图识别（需要配置OPENAI_API_KEY）'
+        help='使用 DeepSeek V3 API 进行意图识别（API已内置）'
     )
     
     parser.add_argument(

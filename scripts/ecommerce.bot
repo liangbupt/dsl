@@ -115,24 +115,15 @@ bot "电商智能客服" {
         on_enter {
             say "好的，我来帮您查询订单。📦"
             ask "请告诉我您的订单号（10-20位数字）：" -> order_id
-        }
-        
-        on_message {
-            if validate_order_id(order_id) {
-                say "正在查询订单 " + order_id + " ..."
-                # 模拟查询结果
-                say "【订单信息】"
-                say "订单号：" + order_id
-                say "状态：已发货 🚚"
-                say "预计送达：2-3个工作日"
-                say "物流公司：顺丰速运"
-                say ""
-                say "请问还有其他问题吗？"
-                goto 欢迎状态
-            } else {
-                say "订单号格式不正确，请输入10-20位数字的订单号。"
-                ask "请重新输入订单号：" -> order_id
-            }
+            say "正在查询订单 " + order_id + " ..."
+            say "【订单信息】"
+            say "订单号：" + order_id
+            say "状态：已发货 🚚"
+            say "预计送达：2-3个工作日"
+            say "物流公司：顺丰速运"
+            say ""
+            say "请问还有其他问题吗？"
+            goto 欢迎状态
         }
         
         when 告别 -> 结束状态
@@ -147,16 +138,9 @@ bot "电商智能客服" {
         on_enter {
             say "好的，我来帮您处理退货退款。💰"
             ask "请先告诉我您的订单号：" -> order_id
-        }
-        
-        on_message {
-            if order_id != "" {
-                say "订单 " + order_id + " 已找到。"
-                ask "请问退货原因是？（如：质量问题/不喜欢/尺码不合适）" -> refund_reason
-                goto 退款确认
-            } else {
-                say "请提供订单号以便查询。"
-            }
+            say "订单 " + order_id + " 已找到。"
+            ask "请问退货原因是？（如：质量问题/不喜欢/尺码不合适）" -> refund_reason
+            goto 退款确认
         }
         
         when 告别 -> 结束状态
@@ -188,7 +172,7 @@ bot "电商智能客服" {
         on_enter {
             say "✅ 退款申请已提交成功！"
             say "退款将在1-3个工作日内处理。"
-            say "您可以在"我的订单"中查看退款进度。"
+            say "您可以在【我的订单】中查看退款进度。"
             say ""
             say "请问还有其他问题吗？"
             goto 欢迎状态
@@ -199,19 +183,14 @@ bot "电商智能客服" {
         on_enter {
             say "好的，我来帮您了解商品信息。🏷️"
             ask "请问您想咨询哪个商品？" -> product_name
-        }
-        
-        on_message {
-            if product_name != "" {
-                say "【商品信息】" + product_name
-                say "价格：¥299.00"
-                say "库存：有货 ✓"
-                say "颜色：黑色/白色/蓝色"
-                say "规格：S/M/L/XL"
-                say ""
-                say "请问还想了解什么？"
-                goto 欢迎状态
-            }
+            say "【商品信息】" + product_name
+            say "价格：¥299.00"
+            say "库存：有货 ✓"
+            say "颜色：黑色/白色/蓝色"
+            say "规格：S/M/L/XL"
+            say ""
+            say "请问还想了解什么？"
+            goto 欢迎状态
         }
         
         when 告别 -> 结束状态
@@ -227,17 +206,12 @@ bot "电商智能客服" {
             say "非常抱歉给您带来不好的体验。😔"
             say "我们会认真对待您的反馈。"
             ask "请详细描述您的问题或建议：" -> complaint_content
-        }
-        
-        on_message {
-            if complaint_content != "" {
-                ask "为了方便我们联系您，请留下您的手机号：" -> customer_phone
-                say ""
-                say "感谢您的反馈！📝"
-                say "我们会在24小时内与您联系处理。"
-                say "工单号：CP" + str(length(complaint_content) * 1000)
-                goto 欢迎状态
-            }
+            ask "为了方便我们联系您，请留下您的手机号：" -> customer_phone
+            say ""
+            say "感谢您的反馈！📝"
+            say "我们会在24小时内与您联系处理。"
+            say "工单号：CP20231216001"
+            goto 欢迎状态
         }
         
         when 告别 -> 结束状态

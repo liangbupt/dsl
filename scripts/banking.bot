@@ -122,16 +122,8 @@ bot "银行智能客服" {
         on_enter {
             say "为了保护您的账户安全，请先进行身份验证 🔐"
             ask "请输入您的银行卡号后4位：" -> card_number
-        }
-        
-        on_message {
-            if length(card_number) == 4 {
-                say "验证成功！尾号 " + card_number + " 的账户"
-                goto 账户信息
-            } else {
-                say "请输入正确的4位数字。"
-                ask "请重新输入银行卡号后4位：" -> card_number
-            }
+            say "验证成功！尾号 " + card_number + " 的账户"
+            goto 账户信息
         }
         
         when 告别 -> 结束对话
@@ -185,15 +177,8 @@ bot "银行智能客服" {
             say "转账服务 💸"
             say "⚠️ 请确保收款信息准确无误"
             ask "请输入您的银行卡号后4位进行验证：" -> card_number
-        }
-        
-        on_message {
-            if length(card_number) == 4 {
-                say "验证通过 ✓"
-                goto 转账输入
-            } else {
-                say "请输入正确的4位数字。"
-            }
+            say "验证通过 ✓"
+            goto 转账输入
         }
         
         when 否定 -> 初始状态
@@ -206,16 +191,9 @@ bot "银行智能客服" {
     state 转账输入 {
         on_enter {
             ask "请输入收款账号：" -> target_account
-        }
-        
-        on_message {
-            if length(target_account) >= 10 {
-                say "收款账号：" + mask_card_number(target_account)
-                ask "请输入转账金额（元）：" -> amount
-                goto 转账确认
-            } else {
-                say "账号格式不正确，请重新输入。"
-            }
+            say "收款账号：" + mask_card_number(target_account)
+            ask "请输入转账金额（元）：" -> amount
+            goto 转账确认
         }
         
         when 否定 -> 初始状态
@@ -349,17 +327,10 @@ bot "银行智能客服" {
             say "━━━━━━━━━━━━━━━━"
             say "检测到挂失请求，将立即处理！"
             ask "请输入需要挂失的卡号后4位：" -> card_number
-        }
-        
-        on_message {
-            if length(card_number) == 4 {
-                say ""
-                say "⚠️ 警告：挂失后该卡将立即停用！"
-                say "确认挂失尾号 " + card_number + " 的银行卡吗？"
-                goto 挂失确认
-            } else {
-                say "请输入正确的4位卡号。"
-            }
+            say ""
+            say "⚠️ 警告：挂失后该卡将立即停用！"
+            say "确认挂失尾号 " + card_number + " 的银行卡吗？"
+            goto 挂失确认
         }
         
         when 否定 -> 初始状态

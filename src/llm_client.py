@@ -2,15 +2,25 @@
 LLM客户端模块
 
 集成大语言模型API，用于用户意图识别。
-支持OpenAI API和兼容的API服务。
+使用火山引擎 DeepSeek V3 API。
 """
 
-import os
 import json
 import re
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
+
+# ==================== API 配置（内置） ====================
+
+LLM_CONFIG = {
+    "api_key": "5d62ae9a-b776-4d5e-886e-862f81fe6b3a",
+    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "model": "deepseek-v3-250324",
+}
+
+
+# ==================== 数据类定义 ====================
 
 @dataclass
 class IntentInfo:
@@ -30,26 +40,28 @@ class IntentResult:
     reasoning: str
 
 
+# ==================== LLM 客户端 ====================
+
 class LLMClient:
     """大语言模型客户端"""
     
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: str = "gpt-3.5-turbo"
+        api_key: str = None,
+        base_url: str = None,
+        model: str = None
     ):
         """
         初始化LLM客户端
         
         Args:
-            api_key: API密钥，如果不提供则从环境变量获取
-            base_url: API基础URL，用于兼容其他服务
+            api_key: API密钥
+            base_url: API基础URL
             model: 使用的模型名称
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        self.model = model
+        self.api_key = api_key or LLM_CONFIG["api_key"]
+        self.base_url = base_url or LLM_CONFIG["base_url"]
+        self.model = model or LLM_CONFIG["model"]
         self._client = None
         
     def _get_client(self):
@@ -64,7 +76,7 @@ class LLMClient:
             except ImportError:
                 raise RuntimeError("请安装openai库: pip install openai")
             except Exception as e:
-                raise RuntimeError(f"初始化OpenAI客户端失败: {e}")
+                raise RuntimeError(f"初始化LLM客户端失败: {e}")
         return self._client
     
     def recognize_intent(
@@ -158,12 +170,26 @@ class LLMClient:
     ) -> IntentResult:
         """解析LLM的意图识别响应"""
         try:
-            # 尝试提取JSON
-            json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
+            # 移除可能的 markdown 代码块标记
+            text = response_text.strip()
+            if text.startswith("```"):
+                # 移除 ```json 或 ``` 开头
+                lines = text.split('\n')
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                text = '\n'.join(lines)
+            
+            # 尝试提取JSON（支持嵌套）
+            # 找到第一个 { 和最后一个 }
+            start = text.find('{')
+            end = text.rfind('}')
+            if start != -1 and end != -1 and end > start:
+                json_str = text[start:end+1]
+                result = json.loads(json_str)
             else:
-                result = json.loads(response_text)
+                result = json.loads(text)
             
             intent_name = result.get("intent", "unknown")
             
@@ -205,13 +231,11 @@ class LLMClient:
         
         for intent in intents:
             score = 0
-            matched_patterns = []
             
             # 检查关键词匹配
             for pattern in intent.patterns:
                 if pattern.lower() in user_input_lower:
                     score += 1
-                    matched_patterns.append(pattern)
             
             # 检查示例相似度（简单的词重叠）
             for example in intent.examples:
@@ -225,7 +249,7 @@ class LLMClient:
                 best_match = intent.name
         
         if best_match and best_score > 0:
-            confidence = min(best_score / 5, 1.0)  # 归一化
+            confidence = min(best_score / 5, 1.0)
             return IntentResult(
                 intent_name=best_match,
                 confidence=confidence,
@@ -245,78 +269,7 @@ class LLMClient:
         user_input: str,
         entity_types: List[str]
     ) -> Dict[str, str]:
-        """
-        从用户输入中提取实体
-        
-        Args:
-            user_input: 用户输入
-            entity_types: 需要提取的实体类型列表
-        
-        Returns:
-            实体字典
-        """
-        system_prompt = """你是一个实体提取助手。从用户输入中提取指定类型的实体。
-
-返回JSON格式：
-```json
-{
-    "实体类型1": "提取的值或null",
-    "实体类型2": "提取的值或null"
-}
-```
-只返回JSON。"""
-
-        user_prompt = f"""需要提取的实体类型: {', '.join(entity_types)}
-
-用户输入: "{user_input}"
-
-请提取实体。"""
-
-        try:
-            client = self._get_client()
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.2,
-                max_tokens=150
-            )
-            
-            result_text = response.choices[0].message.content.strip()
-            json_match = re.search(r'\{[^{}]*\}', result_text, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-            return {}
-            
-        except Exception as e:
-            print(f"[警告] 实体提取失败: {e}")
-            return {}
-
-
-class MockLLMClient(LLMClient):
-    """模拟LLM客户端，用于测试和离线使用"""
-    
-    def __init__(self):
-        super().__init__()
-        self._client = "mock"
-    
-    def recognize_intent(
-        self,
-        user_input: str,
-        intents: List[IntentInfo],
-        context: Optional[Dict] = None
-    ) -> IntentResult:
-        """使用本地规则匹配"""
-        return self._local_intent_match(user_input, intents)
-    
-    def extract_entities(
-        self,
-        user_input: str,
-        entity_types: List[str]
-    ) -> Dict[str, str]:
-        """简单的正则实体提取"""
+        """从用户输入中提取实体"""
         entities = {}
         
         # 订单号：10-20位数字
@@ -337,16 +290,33 @@ class MockLLMClient(LLMClient):
         return entities
 
 
-def create_llm_client(
-    use_mock: bool = False,
-    **kwargs
-) -> LLMClient:
+# ==================== 模拟客户端（用于测试） ====================
+
+class MockLLMClient(LLMClient):
+    """模拟LLM客户端，用于测试和无API环境"""
+    
+    def __init__(self):
+        super().__init__()
+    
+    def recognize_intent(
+        self,
+        user_input: str,
+        intents: List[IntentInfo],
+        context: Optional[Dict] = None
+    ) -> IntentResult:
+        """使用本地规则匹配进行意图识别"""
+        return self._local_intent_match(user_input, intents)
+
+
+# ==================== 工厂函数 ====================
+
+def create_llm_client(use_mock: bool = False, **kwargs) -> LLMClient:
     """
     创建LLM客户端
     
     Args:
-        use_mock: 是否使用模拟客户端
-        **kwargs: 传递给LLMClient的参数
+        use_mock: 是否使用模拟客户端（本地规则匹配）
+        **kwargs: 传递给LLMClient的参数（可覆盖内置配置）
     
     Returns:
         LLM客户端实例
@@ -354,18 +324,13 @@ def create_llm_client(
     if use_mock:
         return MockLLMClient()
     
-    # 检查API密钥
-    api_key = kwargs.get('api_key') or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("[警告] 未配置OPENAI_API_KEY，使用模拟客户端")
-        return MockLLMClient()
-    
+    print(f"[信息] 使用 DeepSeek V3 API (模型: {LLM_CONFIG['model']})")
     return LLMClient(**kwargs)
 
 
-# 测试代码
+# ==================== 测试代码 ====================
+
 if __name__ == '__main__':
-    # 测试意图
     test_intents = [
         IntentInfo(
             name="查询订单",
@@ -387,14 +352,13 @@ if __name__ == '__main__':
         )
     ]
     
-    # 使用模拟客户端测试
-    client = create_llm_client(use_mock=True)
+    # 使用真实API测试
+    client = create_llm_client(use_mock=False)
     
     test_inputs = [
         "你好，我想查一下订单",
-        "我的快递到哪了，订单号是1234567890123",
+        "我的快递到哪了",
         "这个东西不好用，我要退货",
-        "今天天气怎么样"
     ]
     
     print("意图识别测试：")
