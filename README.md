@@ -7,11 +7,11 @@
 ## 功能特性
 
 - 🎯 **自定义DSL语法**：专门用于描述客服机器人对话逻辑，支持中文标识符
-- 🤖 **LLM意图识别**：调用OpenAI API进行用户意图识别，支持降级到本地规则匹配
+- 🤖 **DeepSeek V3 意图识别**：集成火山引擎 DeepSeek V3 API 进行智能意图识别
 - 📝 **多业务场景支持**：提供电商、银行、电信三个业务场景脚本范例
 - 🔄 **状态机驱动**：基于状态转换的对话流程管理
 - 💻 **命令行界面**：简洁的CLI交互方式，支持调试模式
-- ✅ **完整测试覆盖**：30个单元测试全部通过
+- ✅ **完整测试覆盖**：单元测试全部通过
 
 ## DSL语法概览
 
@@ -92,7 +92,7 @@ dsl/
 
 - Python 3.8+
 - PLY (Python Lex-Yacc)
-- OpenAI Python SDK
+- OpenAI Python SDK（用于调用 DeepSeek API，兼容协议）
 - colorama（可选，用于彩色输出）
 
 ### 安装依赖
@@ -104,7 +104,7 @@ pip install -r requirements.txt
 ### 运行客服机器人
 
 ```bash
-# 运行电商客服脚本（使用模拟LLM，无需API密钥）
+# 运行电商客服脚本（使用模拟LLM，无需API）
 python src/cli.py scripts/ecommerce.bot
 
 # 运行银行客服脚本
@@ -113,43 +113,29 @@ python src/cli.py scripts/banking.bot
 # 运行电信客服脚本
 python src/cli.py scripts/telecom.bot
 
+# 使用 DeepSeek V3 API 进行意图识别（推荐）
+python src/cli.py scripts/ecommerce.bot --llm
+
 # 启用调试模式
-python src/cli.py scripts/ecommerce.bot --debug
+python src/cli.py scripts/ecommerce.bot --llm --debug
 
 # 查看帮助
 python src/cli.py --help
 ```
 
-### 使用 DeepSeek API（推荐）
+### API 配置说明
 
-```bash
-# 配置 DeepSeek API密钥
-# Windows
-set DEEPSEEK_API_KEY=your_api_key_here
+项目已内置火山引擎 DeepSeek V3 API 配置，位于 `src/llm_client.py`：
 
-# Linux/Mac
-export DEEPSEEK_API_KEY=your_api_key_here
-
-# 使用 DeepSeek V3 进行意图识别（默认）
-python src/cli.py scripts/ecommerce.bot --llm
-
-# 或显式指定
-python src/cli.py scripts/ecommerce.bot --llm --provider deepseek
+```python
+LLM_CONFIG = {
+    "api_key": "your-api-key",
+    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "model": "deepseek-v3-250324",
+}
 ```
 
-### 使用 OpenAI API（可选）
-
-```bash
-# 配置 OpenAI API密钥
-# Windows
-set OPENAI_API_KEY=your_api_key_here
-
-# Linux/Mac
-export OPENAI_API_KEY=your_api_key_here
-
-# 使用 OpenAI 进行意图识别
-python src/cli.py scripts/ecommerce.bot --llm --provider openai
-```
+如需使用自己的 API 密钥，直接修改该文件即可。
 
 ## 业务场景示例
 
@@ -181,8 +167,30 @@ python -m pytest tests/test_interpreter.py -v
 
 - **编程语言**: Python 3.8+
 - **词法/语法分析**: PLY (Python Lex-Yacc)
-- **LLM集成**: DeepSeek API（默认）、OpenAI API（兼容）
+- **LLM集成**: 火山引擎 DeepSeek V3 API
 - **版本管理**: Git
+
+## 架构流程
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  .bot 脚本  │ -> │  词法分析   │ -> │  语法分析   │ -> │    AST      │
+│             │    │  (lexer)    │    │  (parser)   │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
+                                                                 │
+                                                                 ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  用户交互   │ <- │  CLI界面    │ <- │   解释器    │ <- │  加载 AST   │
+│             │    │  (cli)      │    │ (interpreter)│    │             │
+└──────┬──────┘    └─────────────┘    └──────┬──────┘    └─────────────┘
+       │                                      │
+       │ 用户输入                             │ 意图识别
+       ▼                                      ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    DeepSeek V3 API (llm_client)                     │
+│                 https://ark.cn-beijing.volces.com/api/v3            │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## 许可证
 

@@ -55,7 +55,7 @@ class LLMClient:
         初始化LLM客户端
         
         Args:
-            api_key: API密钥hu
+            api_key: API密钥
             base_url: API基础URL
             model: 使用的模型名称
         """
@@ -65,18 +65,19 @@ class LLMClient:
         self._client = None
         
     def _get_client(self):
-        """延迟初始化OpenAI客户端"""
+        """延迟初始化API客户端（DeepSeek兼容OpenAI SDK）"""
         if self._client is None:
             try:
+                # DeepSeek API 兼容 OpenAI SDK，所以使用 openai 库作为客户端
                 from openai import OpenAI
                 self._client = OpenAI(
                     api_key=self.api_key,
                     base_url=self.base_url
                 )
             except ImportError:
-                raise RuntimeError("请安装openai库: pip install openai")
+                raise RuntimeError("请安装openai库: pip install openai（DeepSeek API兼容此SDK）")
             except Exception as e:
-                raise RuntimeError(f"初始化LLM客户端失败: {e}")
+                raise RuntimeError(f"初始化DeepSeek客户端失败: {e}")
         return self._client
     
     def recognize_intent(
